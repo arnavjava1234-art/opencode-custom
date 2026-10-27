@@ -1,0 +1,51 @@
+name: Build Kaggle Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node & Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile || bun install
+
+      - name: Build Web UI
+        run: |
+          bun run --cwd packages/app build
+
+      - name: Compile Standalone Linux Binary
+        run: |
+          bun run --cwd packages/cli script/build.ts --single --target=opencode-linux-x64
+          mkdir -p release-bin
+          BIN_PATH=$(find packages/cli/dist -type f -name "opencode" -o -name "opencode-linux-x64" | head -n 1)
+          if [ -z "$BIN_PATH" ]; then
+            BIN_PATH=$(find packages/cli/dist -type f -perm /111 | head -n 1)
+          fi
+          echo "Found binary at: $BIN_PATH"
+          cp "$BIN_PATH" release-bin/opencode-linux-x64
+          chmod +x release-bin/opencode-linux-x64
+
+      - name: Publish Release
+        run: |
+          gh release create latest release-bin/opencode-linux-x64 \
+            --title "OpenCode Custom (Linux x64)" \
+            --notes "Pre-compiled OpenCode binary with Web UI zip upload & auto-extraction for Kaggle." \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
