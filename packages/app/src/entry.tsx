@@ -91,6 +91,7 @@ if (root instanceof HTMLElement && root.dataset.opencodeMounted === undefined) {
           authToken: !!auth,
           http: {
             url: web.currentServerUrl,
+            password: auth?.password ?? "kaggle",
             ...auth,
           },
         }
