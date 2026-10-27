@@ -225,7 +225,7 @@ function createServerController(
     current: () => {
       const route = currentRoute()
 
-      return route.type === "session" && route.server === connKey ? route.sessionId : undefined
+      return route?.type === "session" && route.server === connKey ? route.sessionId : undefined
     },
     // Until the stored tabs load, keep every transcript so startup never evicts a tab's session.
     keep: () =>
